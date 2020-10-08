@@ -9,14 +9,16 @@ from TDDFA.utils.tddfa_util import (
         u, w_shp, w_exp,
         tri, _parse_param
         )
-from TDDFA.utils.pose import P2sRt
+from TDDFA.utils.pose import P2sRt, matrix2angle
 from TDDFA.FaceBoxes import FaceBoxes
 from TDDFA.utils.serialization import get_colors 
 from TDDFA.utils.tddfa_util import _to_ctype
 from TDDFA.Sim3DR import rasterize
 
 class FaceFrontalizer():
-    def __init__(self, out_size=[0, 0, 128, 128]):
+    def __init__(self, out_size=[0, 0, 128, 128], frontal_threshold=15, single_face=False):
+        self.single_face = single_face
+        self.frontal_threshold = frontal_threshold
         self.out_size = np.asarray(out_size)
         self.config_file = './TDDFA/configs/mb1_120x120.yml'
         self.cfg = yaml.load(open(self.config_file), Loader=yaml.SafeLoader)
@@ -60,27 +62,41 @@ class FaceFrontalizer():
         R, offset, alpha_shp, alpha_exp = _parse_param(param)
         P = param[:12].reshape(3,-1)
         s, R_, t3d = P2sRt(P)
+        yaw, pitch, roll = [x * 180 / np.pi for x in matrix2angle(R_)]
         size = self.tddfa.size
         mask_model = (u + w_shp @ alpha_shp + w_exp @ alpha_exp)
         pts3d = (R_ * s) @ mask_model.reshape(3, -1, order='F') + offset
         pts3d = self._similarity_transform(pts3d, roi_box, size)
         pts3d_origin = (s * mask_model.reshape(3, -1, order='F')) + offset
         pts3d_origin = self._similarity_transform(pts3d_origin, self.out_size, size, center=True) 
-        return pts3d, pts3d_origin
+
+        isFrontal = (yaw < self.frontal_threshold) and (pitch < self.frontal_threshold)
+        return pts3d, pts3d_origin, isFrontal
 
     def __call__(self, img):
         boxes = self.face_boxes(img)
         n_faces = len(boxes)
         if n_faces == 0:
             return
+        if self.single_face and len(boxes) > 1:
+            area = -1
+            bbox = None
+            for box in boxes:
+                left, top, right, bottom = box[:4]
+                box_area = (right - left) * (bottom - top)
+                if box_area > area:
+                    area = box_area
+                    bbox = box
+            boxes = [bbox] 
 
         param_lst, roi_box_lst = self.tddfa(img, boxes)
         face_images = []
+        frontal_array = []
         for param,roi_box in zip(param_lst, roi_box_lst):
-            #out_box = [0, 0, roi_box[2] - roi_box[0], roi_box[3] - roi_box[1]]
-            fitted_model, front_model = self._compute_face_models(param, roi_box)
+            fitted_model, front_model, isFrontal = self._compute_face_models(param, roi_box)
             face_images.append(self._draw_face(img, fitted_model, front_model, self.out_size))
-        return face_images
+            frontal_array.append(isFrontal)
+        return face_images, frontal_array
 
 
 
