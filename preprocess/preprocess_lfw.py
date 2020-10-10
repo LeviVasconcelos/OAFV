@@ -6,6 +6,7 @@ import cv2
 from pathlib import Path
 from face_frontalizer import FaceFrontalizer
 from tqdm import tqdm
+from shutil import copyfile
 
 def preprocess(root, frontal_file='frontal_faces.txt'):
     ## Preprocess lfw dataset by applying frontalization
@@ -36,10 +37,15 @@ def preprocess(root, frontal_file='frontal_faces.txt'):
             for filename in frontal_faces:
                 f.write(filename + '\n')
         print('frontal faces saved at: %s, with %d entries' % (frontal_file, len(frontal_faces)))
+    return frontal_file
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--root_dir', default='./data/lfw', help='root dir of lfw dataset')
-
+    parser.add_argument('--copy_frontal', default=None, type=string, help='dir which frontal faces should be copied to')
     args = parser.parse_args()
-    preprocess(root=args.root_dir)
+    frontal_file = preprocess(root=args.root_dir)
+    if parser.copy_frontal_faces is not None:
+        copy_frontal_faces(frontal_file, args.copy_frontal)
+
