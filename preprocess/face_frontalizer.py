@@ -1,5 +1,5 @@
 import sys
-sys.path.append('./TDFFA')
+sys.path.append('./TDDFA')
 import os
 import yaml
 import numpy as np
@@ -27,7 +27,7 @@ class FaceFrontalizer():
         self.face_boxes = FaceBoxes()
 
     def _draw_face(self, img, ver, ver_o, box):
-        overlap = np.ones((box[2].astype(int), box[3].astype(int), 3), dtype=img.dtype) * 70
+        overlap = np.zeros((box[2].astype(int), box[3].astype(int), 3), dtype=img.dtype) 
         colors = get_colors(img, ver)
         ver = _to_ctype(ver.T)  # transpose to m x 3
         #colors = bilinear_interpolate(img, ver[:, 0], ver[:, 1]) / 255.

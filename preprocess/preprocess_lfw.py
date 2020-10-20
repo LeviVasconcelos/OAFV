@@ -20,6 +20,8 @@ def preprocess(root, frontal_file='frontal_faces.txt'):
     frontal_faces = []
     for filename in tqdm(image_files):
         filename = str(filename)
+        if 'frontalized' in filename:
+            continue
         image = cv2.imread(filename)
         face_array, frontal_array = frontalizer(image)
         if len(face_array) > 1:
@@ -43,9 +45,9 @@ def preprocess(root, frontal_file='frontal_faces.txt'):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--root_dir', default='./data/lfw', help='root dir of lfw dataset')
-    parser.add_argument('--copy_frontal', default=None, type=string, help='dir which frontal faces should be copied to')
+    parser.add_argument('--copy_frontal', default=None, help='dir which frontal faces should be copied to')
     args = parser.parse_args()
     frontal_file = preprocess(root=args.root_dir)
-    if parser.copy_frontal_faces is not None:
+    if args.copy_frontal_faces is not None:
         copy_frontal_faces(frontal_file, args.copy_frontal)
 

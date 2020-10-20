@@ -44,12 +44,9 @@ if __name__ == '__main__':
     if args.draw_faces is not None:
         for i, face in enumerate(e_faces):
             fileout = os.path.join(args.draw_faces, 'face_k%d.jpg' % i)
-            face += np.abs(np.min(face))
-            face /= np.max(face)
-            face *= 255.
-            print(face.shape)
-            print(np.max(face))
-            print(np.min(face))
+            min_ = np.min(face)
+            max_ = np.max(face)
+            face = 255. * (face - min_)/(max_ - min_)
             cv2.imwrite(fileout, face)
             print('eigen face drawn at: %s' % fileout)
 

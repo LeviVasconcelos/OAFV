@@ -14,7 +14,6 @@ import torch.utils.data as data
 import h5py
 
 from tqdm import tqdm
-import pickle
 
 class LFWDataset(data.Dataset):
     def __init__(self, root, split, transforms):
